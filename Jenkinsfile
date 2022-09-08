@@ -18,7 +18,7 @@ pipeline {
     }
     environment {
         BRANCH_NAME = 'latest'
-        IMAGE_NAME = 'fabric8-java-alpine-openjdk17-jre'
+        IMAGE_NAME = 'alpine-openjdk17-jre'
         IMAGE_PREFIX = 'registry.cn-qingdao.aliyuncs.com/metersphere'
     }
     stages {
