@@ -270,6 +270,15 @@ debug_options() {
   fi
 }
 
+rmi_options() {
+  if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ]; then
+	  local rmi_port="${JAVA_RMI_PORT:-1100}"
+	  local rmi_host="${JAVA_RMI_HOST:-localhost}"
+
+	  echo "-Djava.rmi.server.hostname=${rmi_host} -Dcom.sun.management.jmxremote.port=${rmi_port} -Dcom.sun.management.jmxremote.rmi.port=${rmi_port} -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+  fi
+}
+
 # Read in a classpath either from a file with a single line, colon separated
 # or given line-by-line in separate lines
 # Arg 1: path to claspath (must exist), optional arg2: application jar, which is stripped from the classpath in
@@ -528,7 +537,7 @@ java_options() {
   # Normalize spaces with awk (i.e. trim and elimate double spaces)
   # See e.g. https://www.physicsforums.com/threads/awk-1-1-1-file-txt.658865/ for an explanation
   # of this awk idiom
-  echo "${JAVA_OPTIONS:-} $(run_java_options) $(debug_options) $(proxy_options) $(java_default_options)" | awk '$1=$1'
+  echo "${JAVA_OPTIONS:-} $(run_java_options) $(debug_options) $(rmi_options) $(proxy_options) $(java_default_options)" | awk '$1=$1'
 }
 
 # Fetch classpath from env or from a local "run-classpath" file
@@ -579,6 +588,9 @@ options() {
     local ret=""
     if [ $(hasflag --debug) ]; then
       ret="$ret $(debug_options)"
+    fi
+    if [ $(hasflag --rmi) ]; then
+      ret="$ret $(rmi_options)"
     fi
     if [ $(hasflag --proxy) ]; then
       ret="$ret $(proxy_options)"
