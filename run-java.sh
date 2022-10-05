@@ -273,7 +273,7 @@ debug_options() {
 rmi_options() {
   if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ||  [ -n "${JAVA_RMI_HOST:-}" ]; then
 	  local rmi_port="${JAVA_RMI_PORT:-1100}"
-	  local rmi_host="${JAVA_RMI_HOST}"
+	  local rmi_host="${JAVA_RMI_HOST:-localhost}"
 
 	  echo "-Djava.rmi.server.hostname=${rmi_host} -Dcom.sun.management.jmxremote.port=${rmi_port} -Dcom.sun.management.jmxremote.rmi.port=${rmi_port} -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
   fi
