@@ -271,7 +271,7 @@ debug_options() {
 }
 
 rmi_options() {
-  if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ||  [ -n "${JAVA_RMI_HOST:-}" ]; then
+  if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ] ||  [ -n "${JAVA_RMI_HOST:-}" ]; then
 	  local rmi_port="${JAVA_RMI_PORT:-1100}"
 	  local rmi_host="${JAVA_RMI_HOST:-localhost}"
 
