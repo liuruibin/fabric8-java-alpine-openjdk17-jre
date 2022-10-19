@@ -20,7 +20,7 @@
 # Env-variables evaluated in this script:
 #
 # JAVA_OPTIONS: Checked for already set options
-# JAVA_MAX_MEM_RATIO: Ratio use to calculate a default maximum Memory, in percent.
+# JAVA_MAX_HEAP_RATIO: Ratio use to calculate a default maximum Memory, in percent.
 #                     E.g. the "50" value implies that 50% of the Memory
 #                     given to the container is used as the maximum heap memory with
 #                     '-Xmx'.
@@ -271,7 +271,7 @@ debug_options() {
 }
 
 rmi_options() {
-  if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ] ||  [ -n "${JAVA_RMI_HOST:-}" ]; then
+  if [ -n "${JAVA_ENABLE_RMI:-}" ] || [ -n "${JAVA_RMI_ENABLE:-}" ] ||  [ -n "${JAVA_RMI:-}" ] || [ -n "${JAVA_RMI_HOST:-}" ]; then
 	  local rmi_port="${JAVA_RMI_PORT:-1100}"
 	  local rmi_host="${JAVA_RMI_HOST:-localhost}"
 
@@ -315,12 +315,12 @@ format_classpath() {
 # ==========================================================================
 
 memory_options() {
-  echo "$(calc_init_memory) $(calc_max_memory)"
+  echo "$(calc_init_memory) $(calc_max_heap_memory) $(calc_max_metaspace_memory)"
   return
 }
 
 # Check for memory options and set max heap size if needed
-calc_max_memory() {
+calc_max_heap_memory() {
   # Check whether -Xmx is already given in JAVA_OPTIONS
   if echo "${JAVA_OPTIONS:-}" | grep -q -- "-Xmx"; then
     return
@@ -331,21 +331,54 @@ calc_max_memory() {
   fi
 
   # Check for the 'real memory size' and calculate Xmx from the ratio
-  if [ -n "${JAVA_MAX_MEM_RATIO:-}" ]; then
-    if [ "${JAVA_MAX_MEM_RATIO}" -eq 0 ]; then
-      # Explicitely switched off
+  if [ -n "${JAVA_MAX_HEAP_RATIO:-}" ]; then
+    if [ "${JAVA_MAX_HEAP_RATIO}" -eq 0 ]; then
+      # Explicitly switched off
       return
     fi
-    calc_mem_opt "${CONTAINER_MAX_MEMORY}" "${JAVA_MAX_MEM_RATIO}" "mx"
-  # When JAVA_MAX_MEM_RATIO not set and JVM >= 10 no max_memory
+    calc_mem_opt "${CONTAINER_MAX_MEMORY}" "${JAVA_MAX_HEAP_RATIO}" "mx"
+  # When JAVA_MAX_HEAP_RATIO not set and JVM >= 10 no max_memory
   elif [ "${JAVA_MAJOR_VERSION:-0}" -ge "10" ]; then
     return
   elif [ "${CONTAINER_MAX_MEMORY}" -le 314572800 ]; then
     # Restore the one-fourth default heap size instead of the one-half below 300MB threshold
     # See https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/parallel.html#default_heap_size
     calc_mem_opt "${CONTAINER_MAX_MEMORY}" "25" "mx"
+  elif [ "${CONTAINER_MAX_MEMORY}" -ge 7516192768 ]; then
+    # if above 7gb(maybe neither mem_limit nor CONTAINER_MAX_MEMORY is set), force it to be 1gb.
+    calc_mem_opt "1073741824" "50" "mx"
   else
     calc_mem_opt "${CONTAINER_MAX_MEMORY}" "50" "mx"
+  fi
+}
+
+# Check for memory options and set max metaspace size if needed
+calc_max_metaspace_memory() {
+  # Check whether -Xmx is already given in JAVA_OPTIONS
+  if echo "${JAVA_OPTIONS:-}" | grep -q -- "MaxMetaspaceSize"; then
+    return
+  fi
+
+  if [ -z "${CONTAINER_MAX_MEMORY:-}" ]; then
+    return
+  fi
+
+  # Check for the 'real memory size' and calculate MaxMetaspaceSize from the ratio
+  if [ -n "${JAVA_MAX_METASPACE_RATIO:-}" ]; then
+    if [ "${JAVA_MAX_METASPACE_RATIO}" -eq 0 ]; then
+      # Explicitely switched off
+      return
+    fi
+    if [ "${CONTAINER_MAX_MEMORY}" -le 314572800 ]; then
+      # don't set MaxMetaspaceSize if CONTAINER_MAX_MEMORY below 300MB threshold
+      return
+    fi
+    if [ "${CONTAINER_MAX_MEMORY}" -ge 7516192768 ]; then
+        # if above 7gb(maybe neither mem_limit nor CONTAINER_MAX_MEMORY is set), force it to be 1gb.
+        calc_mem_opt "1073741824" "${JAVA_MAX_METASPACE_RATIO}" "X:MaxMetaspaceSize="
+    else
+        calc_mem_opt "${CONTAINER_MAX_MEMORY}" "${JAVA_MAX_METASPACE_RATIO}" "X:MaxMetaspaceSize="
+    fi
   fi
 }
 
@@ -362,7 +395,12 @@ calc_init_memory() {
   fi
 
   # Calculate Xms from the ratio given
-  calc_mem_opt "${CONTAINER_MAX_MEMORY}" "${JAVA_INIT_MEM_RATIO}" "ms"
+  if [ "${CONTAINER_MAX_MEMORY}" -ge 7516192768 ]; then
+    # if above 7gb(maybe neither mem_limit nor CONTAINER_MAX_MEMORY is set), force it to be 1gb.
+    calc_mem_opt "1073741824" "${JAVA_INIT_MEM_RATIO}" "ms"
+  else
+    calc_mem_opt "${CONTAINER_MAX_MEMORY}" "${JAVA_INIT_MEM_RATIO}" "ms"
+  fi
 }
 
 calc_mem_opt() {
