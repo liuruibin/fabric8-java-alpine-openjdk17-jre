@@ -17,6 +17,8 @@ RUN apk add --update --no-cache tzdata curl fontconfig ttf-dejavu openjdk17-jre 
  && echo "securerandom.source=file:/dev/urandom" >> /usr/lib/jvm/default-jvm/jre/lib/security/java.security \
  && curl -L --connect-timeout 60 -m 1800 https://fit2cloud-support.oss-cn-beijing.aliyuncs.com/xpack-license/get-validator-linux | sh \
  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* \
- && chmod 755 /deployments/run-java.sh
+ && chmod 755 /deployments/run-java.sh \
+ && sed -i "s/nobody:\//nobody:\/dev\/null/g" /etc/passwd \
+ && chmod 744 /bin/busybox
 
 CMD [ "/deployments/run-java.sh" ]
