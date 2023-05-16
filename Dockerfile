@@ -12,11 +12,13 @@ ENV JAVA_APP_DIR=/deployments \
     JAVA_MAJOR_VERSION=17 \
     JAVA_MAX_HEAP_RATIO=40
 
-RUN apk add --update --no-cache tzdata curl fontconfig ttf-dejavu openjdk17-jre nss \
+RUN apk add --update --no-cache tzdata curl fontconfig ttf-dejavu openjdk17-jre nss bash \
  && cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && apk del tzdata \
  && echo "securerandom.source=file:/dev/urandom" >> /usr/lib/jvm/default-jvm/jre/lib/security/java.security \
  && curl -L --connect-timeout 60 -m 1800 https://fit2cloud-support.oss-cn-beijing.aliyuncs.com/xpack-license/get-validator-linux | sh \
  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* \
- && chmod 755 /deployments/run-java.sh
+ && chmod 755 /deployments/run-java.sh \
+ && adduser -D appuser && addgroup appuser root \
+ && chmod 744 /bin/busybox && chmod 744 `which curl` `which apk`
 
 CMD [ "/deployments/run-java.sh" ]
