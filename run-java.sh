@@ -674,12 +674,7 @@ run() {
   # However it could be two args (see above). zsh doesn't like this btw, but zsh is not
   # supported anyway.
   echo exec $(exec_args) java $(java_options) -cp "$(classpath)" ${args} "$@"
-  if [ "${RUN_AS_NON_ROOT_USER:-0}" -eq 1 ]; then
-      exec su -s /bin/sh -c "java $(java_options) -cp "$(classpath)" ${args} "$@"" nobody
-  else
-      exec $(exec_args) java $(java_options) -cp "$(classpath)" ${args} "$@"
-  fi
-
+  exec $(exec_args) java $(java_options) -cp "$(classpath)" ${args} "$@"
 }
 
 # =============================================================================
