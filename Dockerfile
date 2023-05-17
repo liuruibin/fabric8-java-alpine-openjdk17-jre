@@ -19,6 +19,7 @@ RUN apk add --update --no-cache tzdata curl fontconfig ttf-dejavu openjdk17-jre 
  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* \
  && chmod 755 /deployments/run-java.sh \
  && adduser -D appuser && addgroup appuser root \
- && chmod 744 /bin/busybox && chmod 744 `which curl` `which apk`
+ && chmod 744 /bin/busybox && chmod 744 `which curl` `which apk` \
+ && echo "set disable-completion on" >> /etc/inputrc
 
 CMD [ "/deployments/run-java.sh" ]
